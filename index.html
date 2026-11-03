@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功德主提報系統 - 互動探索島</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; }
+        body { background-color: #f4f1ea; color: #333; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        h1 { margin-bottom: 10px; color: #8c2b2b; }
+        p.subtitle { margin-bottom: 20px; color: #666; }
+        
+        /* 島嶼地圖容器 */
+        .island-container {
+            position: relative;
+            width: 900px;
+            height: 600px;
+            background: #a2d5f2; /* 海洋顏色 */
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            overflow: hidden;
+            border: 4px solid #ffffff;
+        }
+
+        /* 繪製陸地形狀 */
+        .island-land {
+            position: absolute;
+            top: 50px; left: 80px; width: 740px; height: 500px;
+            background: #e2d8b8; /* 沙灘 */
+            border-radius: 40% 50% 45% 35% / 40% 45% 50% 35%;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .island-inner {
+            width: 88%; height: 88%;
+            background: #8ec390; /* 草地 */
+            border-radius: 40% 50% 45% 35% / 40% 45% 50% 35%;
+            position: relative;
+        }
+
+        /* 地標按鈕 (Hotspots) */
+        .hotspot {
+            position: absolute;
+            width: 50px; height: 50px;
+            background: #e63946;
+            color: #fff; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-weight: bold; font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: transform 0.2s, background-color 0.2s;
+            border: 3px solid #fff;
+        }
+        .hotspot:hover { transform: scale(1.2); background: #f1faee; color: #e63946; }
+        .hotspot span {
+            position: absolute; top: 55px;
+            white-space: nowrap; background: rgba(0,0,0,0.75);
+            color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 12px;
+        }
+
+        /* 各地標座標位置 */
+        #spot1 { top: 380px; left: 80px; }
+        #spot2 { top: 260px; left: 200px; }
+        #spot3 { top: 120px; left: 320px; }
+        #spot4 { top: 220px; left: 450px; }
+        #spot5 { top: 360px; left: 560px; }
+        #spot6 { top: 200px; left: 650px; background: #2a9d8f; }
+
+        /* 彈窗 Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.5); display: none;
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-card {
+            background: #fff; width: 500px; max-width: 90%; border-radius: 12px;
+            padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-card h2 { color: #8c2b2b; margin-bottom: 5px; }
+        .modal-card h4 { color: #888; margin-bottom: 15px; font-weight: normal; }
+        .modal-card ul { padding-left: 20px; line-height: 1.8; color: #444; }
+        .close-btn {
+            position: absolute; top: 15px; right: 20px; font-size: 24px;
+            cursor: pointer; color: #aaa; border: none; background: none;
+        }
+        .close-btn:hover { color: #000; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <h1>🏝️ 功德主提報系統 - 互動導覽島</h1>
+    <p class="subtitle">點擊島上各地標，探索提報系統的標準作業流程</p>
+
+    <div class="island-container">
+        <div class="island-land">
+            <div class="island-inner">
+                <div class="hotspot" id="spot1" onclick="openModal(1)">1<span>1. 講習港口</span></div>
+                <div class="hotspot" id="spot2" onclick="openModal(2)">2<span>2. 佛光卡服務台</span></div>
+                <div class="hotspot" id="spot3" onclick="openModal(3)">3<span>3. 宏瞻金庫</span></div>
+                <div class="hotspot" id="spot4" onclick="openModal(4)">4<span>4. 提報大殿</span></div>
+                <div class="hotspot" id="spot5" onclick="openModal(5)">5<span>5. 功德長廊</span></div>
+                <div class="hotspot" id="spot6" onclick="openModal(6)">6<span>6. 主管關卡</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 彈窗 Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-card">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <h2 id="modalTitle">標題</h2>
+            <h4 id="modalSubtitle">副標題</h4>
+            <ul id="modalContent"></ul>
+        </div>
+    </div>
+
+    <script>
+        const cardData = {
+            1: {
+                title: "第一站：講習港口",
+                subtitle: "系統權限開放說明",
+                items: [
+                    "系統權限開放：申請系統需參與「功德主提報講習會」，教學完畢後方可開放系統權限；若曾參與過 2019 年（含）以後之提報講習，且經查核簽到記錄屬實者，亦可開放系統權限。"
+                ]
+            },
+            2: {
+                title: "第二站：佛光卡服務台",
+                subtitle: "辦理佛光卡與代號綁定",
+                items: [
+                    "提報功德主必須辦理佛光卡。",
+                    "申辦時務必勾選「功德主」身分別。",
+                    "申辦當下須綁定信徒平時入帳的宏瞻代號。",
+                    "勿重複新增信徒；多筆資料優先選擇有「宏瞻捐款」或「佛光卡」的名單。"
+                ]
+            },
+            3: {
+                title: "第三站：宏瞻金庫",
+                subtitle: "宏瞻系統資料匯出與整併",
+                items: [
+                    "匯出資料時務必選擇「交付後端」，避免系統當機。",
+                    "同一人多個代號需在 12/31 前以「變更捐款人」功能指向唯一代號。",
+                    "金額採計：【道場建檔金額】＋【代收捐款金額】。"
+                ]
+            },
+            4: {
+                title: "第四站：提報大殿",
+                subtitle: "信徒功德主提報作業（新品／增品／夫妻）",
+                items: [
+                    "新品提報：首次提報者（需有佛光卡）；增品提報：已是功德主者。",
+                    "歐洲地區門檻：新品滿 3,000 歐元；增品滿 6,000 歐元（或當年度達 1,000 歐元）。",
+                    "夫妻串聯密技：先提報一方，於資料修改串聯配偶後再搜尋提報另一方。"
+                ]
+            },
+            5: {
+                title: "第五站：功德長廊",
+                subtitle: "義工時數、物資與特殊貢獻",
+                items: [
+                    "義工門檻：苦行／文教達 500 小時，服務達 1,000 小時。",
+                    "事蹟欄須註明公式：（每日時數 × 每週天數 × 年週數）。",
+                    "物資捐贈：僅採計大筆資產（車輛、電腦等），自家產品依成本價（除以三）計算。"
+                ]
+            },
+            6: {
+                title: "第六站：主管關卡",
+                subtitle: "功德主提報送件作業",
+                items: [
+                    "僅各道場主管有權限進行最終送件。",
+                    "送件兩步驟：【1. 全選】 → 【2. 提報送件】。",
+                    "未全選送件者，資料會滯留在系統暫存區（中陰生）！"
+                ]
+            }
+        };
+
+        function openModal(id) {
+            const data = cardData[id];
+            document.getElementById('modalTitle').innerText = data.title;
+            document.getElementById('modalSubtitle').innerText = data.subtitle;
+            
+            const ul = document.getElementById('modalContent');
+            ul.innerHTML = '';
+            data.items.forEach(item => {
+                const li = document.createElement('li');
+                li.innerText = item;
+                ul.appendChild(li);
+            });
+
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
